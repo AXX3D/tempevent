@@ -1,0 +1,456 @@
+﻿TempEvent: An Integrated Event and Activity Registration and Notification System
+
+
+by
+
+
+Munchua, Denz Angelo L.
+Sanson, Karl Kristopher P.
+Santos, Xylon Nicholas N.
+Velasco, Ralph Emmanuel L.
+
+
+Submitted
+
+
+at
+
+
+FEU Institute of Technology
+
+
+September 2026
+
+
+
+Course Professor
+Ma’am Jocelyn Tejada
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Introduction
+Events and activities are an important part of academic and organizational environments, providing opportunities for participants to attend seminars, workshops, training sessions, meetings, and other programs. However, managing event registrations and communicating with participants can become inefficient when these processes rely on separate tools or manual methods. Organizers may need to maintain registration records while also sending confirmations and updates individually, increasing administrative work and the possibility of missed or delayed communication. The proposed system is a centralized web-based solution for managing event information, participant registrations, and registration notifications. Through the system, users can view available events and activities, submit their registration details, and receive confirmation after successfully registering. 
+Event organizers can also manage event information and monitor participant registrations through the same platform. A key component of the proposed system is its integration with an external notification service. After a valid registration is recorded in the system database, the application communicates with a third-party notification service through an Application Programming Interface (API) to send a confirmation to the registered participant. This demonstrates how independently operated systems can exchange information through defined interfaces and data formats while maintaining appropriate validation and error handling. 
+As a foundational scope clarification, TempEvent is developed as a standalone greenfield prototype. Consequently, legacy system integration, existing institutional database migration, and backward compatibility with legacy notification platforms are explicitly outside the current project scope, unless future requirements introduce such dependencies. 
+
+
+Problem and Organizational Context
+Educational institutions and student organizations regularly conduct activities such as seminars, workshops, training sessions, organization meetings, and other campus events. These activities require organizers to collect participant information, maintain registration records, and communicate important information to registered participants. As the number of events and participants increases, managing these processes efficiently becomes increasingly important. In many cases, event registration and participant communication are handled through separate tools or processes. Registration information may be collected through online forms and subsequently maintained through spreadsheets or similar records. 
+Meanwhile, registration confirmations, reminders, and other event-related information may be communicated separately through email or other messaging platforms. Although these methods can support basic event management, they require organizers to move between different systems and may involve additional manual work to ensure that participant records and communications remain consistent. The separation between registration and communication also creates potential issues when handling larger numbers of participants 
+Organizers may need to manually verify registration records before sending messages, determine which participants have already received confirmation, or repeat communication tasks whenever new registrations are received. This can make it more difficult to maintain an organized and consistent registration process. The proposed system addresses these concerns by providing a centralized web-based platform where event information, participant registrations, and notification activities can be managed together.
+
+
+
+
+Systems To Be Integrated
+The proposed system consists of several components that work together to support event management, participant registration, data storage, and automated email notifications. The primary components are the Laravel web application, a MySQL database, and Brevo as the external email delivery service. The web application will also be hosted on a cloud deployment platform to make the system accessible through the internet.
+Laravel Web Application
+Laravel will serve as the primary application framework of the proposed system. It will handle the main business logic and provide the interface through which participants and event organizers interact with the system. For participants, the application will provide functions for viewing available events and submitting registration information. For organizers, it will provide functions for creating and managing events and viewing participant registrations. Laravel will also be responsible for validating submitted information before it is stored or passed to another system. The Laravel application will act as the central component of the integration. It will communicate with the database for persistent data storage and with Brevo when an email notification needs to be sent.
+
+
+MySQL Database
+MySQL will provide persistent storage for the application. It will contain records necessary for the operation of the system, including event information, participant registration data, and notification records. Laravel will communicate with MySQL primarily through Laravel's database and Object-Relational Mapping (ORM) features. This allows application data to be represented through models while database operations are handled through a consistent application interface. Maintaining registration and notification information in the database will also allow the system to distinguish between the successful recording of a registration and the status of its corresponding notification. 
+Brevo Email Service
+Brevo will serve as the external notification service of the proposed system. Its primary responsibility will be the delivery of email messages generated as a result of activities within the registration system, particularly registration confirmation messages. The Laravel application will communicate with Brevo through its provided Application Programming Interface (API). When a participant successfully registers for an event, the application will prepare the required notification information and submit a request to Brevo. Brevo will then process the request and attempt to deliver the email to the specified recipient. Because Brevo operates independently from the proposed system, communication with it represents the primary external integration point of the project.
+
+
+Communication occurs via HTTPS REST API requests enforcing a strict 5.0-second timeout limit to eliminate application thread blocking. 
+Deployment Platform
+The Laravel application and its supporting components will be deployed using a cloud-based hosting platform. The deployment environment will provide the resources necessary to make the application accessible to participants and organizers through a web browser. The specific deployment provider will be selected based on compatibility with Laravel and MySQL, deployment requirements, availability, and project resource limitations.
+
+
+Purpose of the Integration
+The integration of these components allows each system to perform a specific responsibility while contributing to a complete registration workflow. Laravel manages application logic and user interaction, MySQL maintains persistent records, and Brevo provides external email delivery. When a participant completes a valid registration, the Laravel application records the registration in MySQL and initiates communication with Brevo to request delivery of a confirmation email. The result of the notification attempt can then be recorded by the application for monitoring and error handling. This separation of responsibilities allows the registration process and the notification process to remain connected without requiring the application itself to operate an email delivery infrastructure. 
+It also provides a clear integration boundary that can be documented and tested through defined interfaces and contracts.
+
+
+Proposed Integration Approach and alternatives
+        In this section, The proposed system will use a service-oriented integration approach in which the Laravel application acts as the central component responsible for coordinating registration, data storage, and notification processes. Instead of combining all functions into a single component, responsibilities will be separated between the web application, the MySQL database, and the external Brevo email service.
+        For the primary external integration, the Laravel application will communicate with Brevo to a web API. Requests will be transmitted over HTTPS, with the required notification data that will be given or provided in JSON format. This approach establishes a clear interface between the registration system and the external email service while allowing both systems to operate independently.
+
+
+Proposed Integration Approach
+        When a participant submits an event registration, Laravel will first validate the submitted information. A valid registration will then be stored in the MySQL database. When the registration has successfully recorded, the application will prepare the information required for the confirmation email and send a request to Brevo.
+The general integration flow will follow this sequence:
+Participant Registration → Laravel Validation → MySQL Storage → Notification Request → Brevo API → Email Delivery
+        The notification request will contain only the information necessary to generate and deliver the confirmation message, such as the participant's email address, event information, and relevant registration details. Communication with Brevo will be authenticated using credentials stored securely within the application's environment configuration (.env). HTTP calls to Brevo will execute synchronously with an enforced 5.0-second timeout limit, leaving queue-based asynchronous processing as a prospective future expansion.
+        The response returned by the external service will be handled by the Laravel application. Successful requests will allow the system to record that the notification request was accepted, while unsuccessful requests will be logged and handled according to the type of error encountered.
+        The registration and notification processes will be treated as related but different or separate operations. A participant's registration will therefore remain recorded even when the notification service fails. This prevents an external service failure from causing the loss of otherwise valid registration information.
+Database Integration
+        Laravel will interact with the MySQL database through its database abstraction and Object-Relational Mapping (ORM) features. Models will represent the major data entities of the system, while application logic will perform database operations through these models.
+        This approach lessens the need to place raw SQL queries throughout the application and provides a consistent method of creating, retrieving, updating, and deleting records. Database relationships will also be defined through the application's models to maintain associations between events, registrations, participants, and notification records.
+
+
+Alternative Integration Approaches
+        Several alternatives may be considered for the notification component of the system. One option is the use of direct SMTP communication. Under this approach, the Laravel application would connect to an email server and submit messages using SMTP rather than an external web API. Although SMTP is widely supported, an API-based approach provides a clearer application-to-service interface for the purposes of the proposed integration and allows HTTP requests and responses to be handled explicitly.
+        Another option, is the use of a provider-specific software development kit or library. Such as a library, that can simplify communication with an external service by providing predefined methods for common operations. However, directly defining the notification service within the application's own service layer provides greater control over how requests, responses, validation, and errors are handled within the system. 
+Manual email notification is another possible approach in which organizers obtain participant information from the registration records and send confirmation messages themselves. While this requires little technical integration, it maintains the separation between registration and communication that the proposed system is intended to address and introduces additional repetitive work for organizers. 
+An asynchronous queue may also be used to process notifications separately from the participant's registration request. Instead of requiring the notification operation to complete immediately, the application can place a notification task in a queue for later processing. This can improve responsiveness and provide more flexible retry handling when an external service is temporarily unavailable. Queue-based processing may therefore be considered as an extension of the proposed architecture if the scope and deployment environment allow it. 
+
+
+Selected Approach 
+The proposed implementation will use Laravel as the central application, MySQL for persistent data storage, and Brevo as the external email delivery service. Communication with the external notification service will use an API-based approach over HTTPS, while JSON will serve as the primary data format for API requests and responses where applicable.
+This approach was selected because it provides a distinct and testable integration boundary between the application and the external notification service. The separation also allows the application to validate requests, monitor responses, record notification outcomes, and handle failures without making successful event registrations dependent on the continuous availability of the external email service.
+
+
+Integration Points, Interfaces, and Data Formats
+        The proposed system contains several integration points through which information is exchanged between the users, the laravel application, MySQL database, and even the brevo email services. So each integration point have a specific tasks or responsibility and uses an appropriate interface and data format. Defining these boundaries is necessary to make sure that information is transferred consistently and that failures occurring in one component can be identified and handled appropriately.
+
+
+User and Laravel Application Interface
+The first integration point exists between the user and the Laravel web application. Participants will interact with the system through web pages that allow them to view available events and submit registration information. Organizers will use the application interface to manage event information and review participant registrations.
+Registration information submitted by a participant will be received by the Laravel application through an HTTP request. The application will validate the submitted values before any registration record is created. Information required for registration may include the selected event, participant name, email address, and other registration details required by the event.
+Laravel will be responsible for verifying that required fields are present and that submitted values conform to the expected format. Invalid requests will not proceed to the registration and notification processes. Valid requests will be passed to the application's registration logic for storage in the database.
+
+
+Laravel and MySQL Database Interface
+The second integration point exists between the Laravel application and the MySQL database. This interface is responsible for the persistent storage and retrieval of application data, including events, participant registrations, and notification records.
+Laravel will communicate with MySQL through its database abstraction and Object-Relational Mapping features. Application models will represent the major entities stored in the database, allowing the system to perform operations such as creating registration records, retrieving event information, and updating notification statuses without placing database-specific queries throughout the application logic.
+The database will use structured relational data rather than JSON as its primary storage format. Relationships between records will be maintained through database identifiers and model relationships. For example, a registration record will be associated with the corresponding event, while a notification record may be associated with the registration that caused the notification to be generated.
+A registration must be successfully stored before the application initiates the corresponding notification request. This ensures that the system maintains a valid registration record even if communication with the external email service subsequently fails.
+
+
+Laravel and Brevo API Interface.
+The primary external integration point exists between the Laravel application and Brevo. After a registration has been successfully validated and recorded, Laravel will prepare a request containing the information required to generate the registration confirmation email.
+Communication with Brevo will take place through its web API over HTTPS. The application will authenticate its requests using credentials maintained in the application's environment configuration. Sensitive credentials, such as the Brevo API key, will not be included directly in the application's source code or exposed to the participant.
+The request sent to the external service will contain the information necessary for email delivery. Depending on the final implementation, this may include the recipient's email address, sender information, subject, and confirmation message content or template information. Registration and event information required for the confirmation message will be obtained from the application's existing records.
+JSON will be used as the primary representation of request data when communicating with the Brevo API. A conceptual representation of the notification information handled by the application may contain values such as:
+{
+  "recipient": "participant@example.com",
+  "event_name": "Sample Event",
+  "event_date": "2026-10-15",
+  "registration_id": 142
+}
+	
+
+This example represents the information required by the application's notification process and does not necessarily represent the exact request structure required by Brevo. The notification component will be responsible for translating relevant application data into the request structure required by the external API.
+
+
+Response and Error Handling
+After receiving a request, Brevo will return an HTTP response indicating the result of the API operation. The Laravel application will evaluate this response and record the outcome of the notification attempt.
+A successful API response indicates that the notification request has been accepted by the external service for processing. The application can then update the corresponding notification record to reflect the successful submission. This should not be interpreted as a guarantee that the email has reached the recipient's inbox, since final email delivery occurs outside the registration application's direct control.
+Unsuccessful responses will be handled according to the type of failure encountered (e.g., rate limits, invalid credentials, timeouts).
+
+
+The notification result will remain separate from the registration result. If the registration has already been successfully stored, a failure while communicating with Brevo will not remove or invalidate that registration. Instead, the notification attempt will be recorded as unsuccessful or pending further handling according to the final implementation.
+
+
+Summary of Integration Points
+The major integration points of the proposed system can be summarized as follows:
+
+
+Integration Point
+	Interface
+	Data Format
+	Purpose
+	User → Laravel
+	Web interface / HTTP request
+	Form or HTTP request data
+	Submit registration information and interact with event functions
+	Laravel → MySQL
+	Laravel database and ORM interface
+	Relational database records
+	Store and retrieve events, registrations, and notification information
+	Laravel → Brevo
+	Web API over HTTPS
+	JSON
+	Submit email notification requests
+	Brevo → Laravel
+	HTTP API response
+	API response data
+	Communicate the result of notification requests
+	
+
+Together, these interfaces establish clear boundaries between the components of the proposed system. The Laravel application acts as the coordinating component, while MySQL provides persistent data storage and Brevo performs external email delivery. Defining the interfaces and expected data exchanged at each boundary also provides the basis for the interface contracts and integration-focused testing that will be applied later in the project.
+
+
+Construction Standards and Interface Contract Conventions
+To maintain consistency, reliability, and maintainability throughout the development of the proposed system, the project will follow defined construction standards for application code, database interaction, external service communication, configuration, and error handling. These standards will also establish clear interface contracts that specify the expected behavior between the Laravel application and the external notification service.
+
+
+Coding Standards
+The application will follow the coding conventions used by PHP and the Laravel framework. PHP source code will follow the PSR-12 coding style to maintain consistent formatting and structure across the project. Laravel naming and project organization conventions will also be followed when creating controllers, models, migrations, services, and other application components.
+Classes and methods will be given descriptive names that represent their responsibilities. Business logic will be separated from presentation-related code where appropriate, and external service communication will not be placed directly throughout controllers. Instead, communication with Brevo will be handled through a dedicated notification service or similar application component. This separation will make the external integration easier to maintain, test, and modify.
+Code duplication will be minimized by placing reusable operations in appropriate classes or methods. Comments will be used when necessary to explain logic that may not be immediately clear from the implementation itself.
+
+
+Input Validation and Data Handling
+Information received from users will be validated before being processed by the application. Required registration fields must be present, email addresses must conform to an acceptable email format, and references to events must correspond to valid event records before a registration is accepted.
+The application will also validate or prepare data before communicating with an external service. Only information necessary to perform the notification operation will be provided to the notification component. Data received from external services will not be assumed to represent a successful operation without first evaluating the corresponding response.
+Database operations will be performed primarily through Laravel's database abstraction and Object-Relational Mapping features. Relationships between application entities will be represented consistently through models and database relationships.
+
+
+External Service and Configuration Standards
+Communication with Brevo will be performed through a dedicated integration component within the Laravel application. Requests to the external service will use HTTPS and the authentication mechanism required by the Brevo API.
+Sensitive configuration values, including database credentials and Brevo API credentials, will be stored through environment configuration rather than directly written into the application's source code. Such credentials will not be transmitted to or exposed through the client-side interface.
+The application will distinguish between registration processing and notification processing. A registration that has already been successfully stored will not be removed solely because an external notification request fails. This separation prevents the availability of an external service from determining whether valid registration information is retained.
+
+
+Error Handling and Logging
+Errors encountered during application processing or external communication will be handled in a controlled manner. The application will avoid displaying sensitive technical information, credentials, or unnecessary internal error details to users.
+Failures involving the external notification service, such as rejected requests, authentication errors, rate limiting, network failures, server errors, or timeouts, will be identified and recorded where appropriate. Information necessary for diagnosing integration failures may be written to application logs or stored as part of a notification record.
+A failure in the notification process will be handled separately from the participant's registration status. This allows administrators or the application to identify unsuccessful notification attempts without incorrectly treating the participant as unregistered.
+Version Control and Development Standards
+The project source code will be maintained using Git as the version control system. Changes will be organized into meaningful commits so that modifications to the application can be tracked throughout development. Team members will work through separate branches when appropriate and integrate completed work into the project's shared codebase after checking that the changes satisfy the relevant requirements and tests.
+Configuration files containing sensitive credentials will not be committed to the shared repository. Environment-specific values will instead be maintained separately from the application's tracked source code.
+
+
+Interface Contract Conventions
+Interface contracts will define the conditions that must be satisfied when the application exchanges information across an integration boundary. These contracts provide a consistent basis for implementation and testing. Each contract is assigned an identifier so that the integration-focused test cases can explicitly identify the requirement being verified.
+The following interface contracts will apply to the registration and notification integration:
+
+
+Contract ID
+	Interface Contract
+	IC-01
+	A notification operation must contain a valid recipient email address before an external notification request is attempted.
+	IC-02
+	The notification component must receive the registration and event information required to construct the intended confirmation message.
+	IC-03
+	Requests to the external notification service must be authenticated using credentials maintained on the server side and must not expose those credentials to the participant.
+	IC-04
+	An external notification request may only be initiated after the corresponding registration has been successfully validated and stored.
+	IC-05
+	A successful response from the notification API must be treated as successful acceptance of the notification request and recorded separately from the registration status.
+	IC-06
+	Failure of the external notification service must not delete or invalidate a registration that has already been successfully stored.
+	IC-07
+	External service errors and communication failures must be handled without causing an uncontrolled application failure and must be recorded where appropriate.
+	IC-08
+	A rate-limited notification request must be recognized as an unsuccessful or temporary notification condition rather than as a failed participant registration.
+	These contracts distinguish the responsibilities of the registration process from those of the notification process. They also establish observable behaviors that can be tested at the integration boundary. For example, the system can be tested to determine whether an invalid recipient prevents an external request, whether notification processing occurs only after registration storage, and whether an external service failure leaves an existing registration unchanged.
+The contract identifiers will be referenced directly by the project's contract, interface, and failure-path test cases. This creates traceability between the defined integration requirements and the tests used to verify that the implementation satisfies them.
+
+
+Testing Strategy
+Testing will be conducted at different levels to verify both the internal behavior of the application and the interactions between its integrated components. The testing strategy will distinguish among unit testing, integration testing, interface testing, contract testing, and failure-path testing. Particular attention will be given to the boundary between the Laravel application and the Brevo email service because this represents the primary external integration of the proposed system.
+The objective of the testing strategy is not limited to verifying that individual features function correctly. It will also verify that data is exchanged according to the defined interface contracts, that components interact in the correct sequence, and that failures involving an external service do not compromise valid registration records.
+
+
+Unit Testing
+Unit testing will verify individual pieces of application logic independently from external systems. These tests will focus on small units such as methods, validation rules, and service logic without requiring actual communication with Brevo.
+Examples include verifying that required registration fields are validated, invalid email addresses are rejected, and notification information is constructed from the appropriate registration and event data. Where external communication would normally occur, the dependency may be replaced with a mock or other test substitute so that the behavior of the individual unit can be evaluated independently.
+Unit testing therefore establishes confidence in individual application components before their interactions with other components are tested.
+
+
+Integration Testing
+        Integration testing will verify that multiple components of the application operate correctly when connected. Unlike unit testing, which isolates individual units, integration testing evaluates the flow of information between components.
+For the proposed system, integration testing may verify that a valid registration processed by Laravel is correctly stored in MySQL and that the stored registration information is subsequently made available to the notification component. It may also verify that notification outcomes are associated with the correct registration.
+These tests are important because components that function correctly in isolation may still produce errors when exchanging data or operating in sequence.
+
+
+Interface Testing
+Interface testing will focus on the points where separate components exchange information. The primary external interface to be tested is the communication between the Laravel notification component and the Brevo API.
+Interface tests will verify that the application initiates notification processing at the appropriate point in the registration workflow and correctly handles responses returned through the external interface. Testing may use a controlled or simulated external response where necessary so that specific interface behavior can be reproduced consistently without depending on the continuous availability of the live email service.
+
+
+Contract Testing
+Contract testing will verify that interactions conform to the interface contracts defined for the system. Rather than testing only whether two components can communicate, contract tests determine whether the information and conditions involved in that communication satisfy the agreed requirements.
+For example, a notification operation must contain a valid recipient email address before an external request is attempted. Similarly, the notification component must receive the registration and event information required to construct the intended confirmation message. These requirements can be tested independently of whether an actual email is ultimately delivered.
+
+
+Failure-Path Testing
+Failure-path testing will verify the behavior of the system when an integrated component does not operate normally. This is particularly important for Brevo because it is an external service whose availability and responses are outside the direct control of the application.
+Failure-path tests will simulate conditions such as an unavailable external service or a rate-limited request. The expected behavior is that the application handles these failures in a controlled manner, records the notification problem where appropriate, and preserves any registration that was already successfully stored.
+
+
+Integration-Focused Test Cases
+The following test cases are designed specifically around the integration boundaries and interface contracts of the proposed system. The set contains two contract tests, two interface tests, and two failure-path tests. Each case identifies its precondition, input, expected behavior, and the interface contract that it verifies.
+
+
+Contract Test CT-01 — Recipient Validation
+Precondition: A valid event exists and is available for registration. The notification component is configured, but no request to Brevo has yet been made.
+Input: A registration containing an invalid recipient email address, such as participant@.
+Expected Behavior: The application rejects the invalid email address during validation. The registration must not proceed as a valid registration, and no external notification request must be attempted using the invalid recipient information.
+Contract Clause Verified: IC-01 — A notification operation must contain a valid recipient email address before an external notification request is attempted.
+
+
+Contract Test CT-02 — Required Notification Information
+Precondition: A valid registration has been stored and is available to the notification component.
+Input: The notification component is invoked without one of the pieces of registration or event information required to construct the intended confirmation message.
+Expected Behavior: The notification operation must not submit an incomplete request as though it were valid. The missing required information must be identified and handled according to application validation or error-handling rules before an external notification request is attempted.
+Contract Clause Verified: IC-02 — The notification component must receive the registration and event information required to construct the intended confirmation message.
+
+
+Interface Test IT-01 — Notification After Successful Registration
+Precondition: A valid event exists and can accept a registration. The database is available, and the notification interface is configured for testing.
+Input: A participant submits valid registration information, including a valid email address and a valid event selection.
+Expected Behavior: Laravel validates the information and successfully stores the registration in MySQL. Only after the registration has been stored does the application initiate the notification operation using information associated with that registration.
+Contract Clause Verified: IC-04 — An external notification request may only be initiated after the corresponding registration has been successfully validated and stored.
+
+
+Interface Test IT-02 — Successful Notification API Response
+Precondition: A valid registration has already been stored, and the application submits a valid notification request through the external notification interface.
+Input: The external notification interface returns a successful response indicating that the notification request has been accepted for processing.
+Expected Behavior: The Laravel application recognizes the successful API response and records the notification request as successfully accepted. The notification outcome remains distinct from the participant's registration status.
+Contract Clause Verified: IC-05 — A successful response from the notification API must be treated as successful acceptance of the notification request and recorded separately from the registration status.
+
+
+Failure-Path Test FP-01 — External Service Unavailable
+Precondition: A participant's valid registration has already been successfully stored in MySQL.
+Input: The application attempts to submit the corresponding notification request, but the external notification service is unavailable or the request experiences a network timeout.
+Expected Behavior: The application handles the communication failure without an uncontrolled application error. The unsuccessful notification attempt is recorded or logged where appropriate. The participant's existing registration remains stored and valid despite the notification failure.
+Contract Clauses Verified: IC-06 — Failure of the external notification service must not delete or invalidate a registration that has already been successfully stored. 
+IC-07 — External service errors and communication failures must be handled without causing an uncontrolled application failure and must be recorded where appropriate.
+
+
+Failure-Path Test FP-02 — Rate-Limited Notification Request
+Precondition: A participant's valid registration has already been successfully stored, and the application attempts to send its notification through the external service.
+Input: The external notification interface returns a rate-limit response indicating that the notification request cannot currently be processed because the permitted request limit has been reached.
+Expected Behavior: The application identifies the response as a notification-related failure or temporary condition rather than a registration failure. The condition is recorded or logged for appropriate handling, while the participant's previously stored registration remains valid.
+Contract Clauses Verified: IC-08 — A rate-limited notification request must be recognized as an unsuccessful or temporary notification condition rather than as a failed participant registration. 
+IC-06 — Failure of the external notification service must not delete or invalidate a registration that has already been successfully stored.
+
+
+Test Coverage Summary
+The six integration-focused test cases provide traceability between the proposed testing activities and the defined interface contracts.
+
+
+Test Case
+	Test Type
+	Primary Integration Concern
+	Contract Clause(s)
+	CT-01
+	Contract
+	Valid recipient information
+	IC-01
+	CT-02
+	Contract
+	Required notification information
+	IC-02
+	IT-01
+	Interface
+	Registration-to-notification sequence
+	IC-04
+	IT-02
+	Interface
+	Successful API response handling
+	IC-05
+	FP-01
+	Failure Path
+	Service unavailability or timeout
+	IC-06, IC-07
+	FP-02
+	Failure Path
+	External service rate limiting
+	IC-08, IC-06
+	Together, these tests verify both normal and abnormal interactions across the system's integration boundaries. They also provide direct traceability between the interface contracts established during system design and the tests that will be used to determine whether those contracts have been implemented correctly.
+
+
+Scrum Working Arrangement
+The development of the proposed system will follow a Scrum-based working arrangement to organize tasks, monitor progress, and support incremental development. The project will be divided into short development cycles in which the team selects a manageable set of tasks, implements and tests the required functionality, and reviews the completed work before proceeding to the next cycle.
+This arrangement is intended to support continuous coordination among team members while allowing changes and integration issues to be identified during development rather than only at the end of the project.
+
+
+Sprint Length
+The project will use one-week sprints. Each sprint will focus on a defined set of requirements or development tasks taken from the project backlog. A one-week duration provides the team with enough time to implement and test a manageable amount of work while still allowing progress and technical issues to be reviewed regularly.
+At the beginning of each sprint, the team will identify the tasks to be completed and determine their priorities based on the current state of the project. At the end of the sprint, completed work will be reviewed against the agreed requirements and Definition of Done. Tasks that do not satisfy the completion criteria will remain incomplete and will be reconsidered during subsequent sprint planning.
+Scrum Roles
+The project team will organize its responsibilities using the primary roles associated with Scrum: Product Owner, Scrum Master, and Developers.
+The Product Owner will be responsible for maintaining and prioritizing the project requirements and backlog. This role will help ensure that development work remains aligned with the objectives and expected functionality of the proposed system.
+The Scrum Master will support the team's Scrum process by facilitating coordination, helping identify obstacles affecting progress, and ensuring that the agreed working arrangement is followed.
+The Developers will be responsible for designing, implementing, integrating, testing, and documenting the system. Development responsibilities may be distributed among team members according to the requirements of each sprint while maintaining shared responsibility for the completed system.
+Specific role assignments may be established by the group before development begins. Regardless of individual assignments, major implementation and integration decisions will be communicated among the members to maintain consistency across the project.
+
+
+Sprint Activities
+Each sprint will begin with Sprint Planning, during which the team will review the project backlog and select the work that can reasonably be completed within the sprint. Selected work will be divided into development tasks with clear objectives.
+During the sprint, the team will conduct brief and regular progress discussions. These discussions will be used to identify completed work, current tasks, and obstacles that may affect development. Because the project is being completed by a student group, the frequency and method of these discussions may be adjusted according to the team's academic schedules while maintaining regular communication throughout the sprint.
+At the end of each sprint, a Sprint Review will be conducted to examine the functionality completed during the development cycle and determine whether it satisfies the relevant requirements. Integration-related functionality will be reviewed together with its expected interface behavior rather than being considered complete solely because the individual component has been implemented.
+The team will also conduct a Sprint Retrospective to discuss aspects of the development process that worked effectively, problems encountered during the sprint, and possible improvements to the team's working arrangement for the following sprint.
+
+
+Project Backlog and Work Organization
+The project backlog will contain the functional, integration, testing, and documentation work required to complete the proposed system. Items may include event management, participant registration, database operations, notification integration, interface validation, error handling, testing, deployment preparation, and project documentation.
+Integration-related work will be treated as part of the relevant feature rather than as a separate activity performed only after application development is complete. For example, registration functionality that requires a confirmation notification will not be considered fully completed until the relevant interaction with the notification component has been implemented and tested according to the scope of the sprint.
+
+
+Definition of Done
+A Definition of Done will be used to establish a shared understanding of when a backlog item or feature can be considered completed. A work item will be considered done when all applicable completion conditions have been satisfied.
+For the proposed system, the Definition of Done will require that:
+* The required functionality has been implemented and satisfies its defined acceptance criteria.
+* The implementation follows the project's agreed PHP, Laravel, and coding conventions.
+* Relevant input validation and error handling have been implemented.
+* Sensitive configuration values and credentials are not embedded directly in the source code.
+* Applicable unit tests have been completed and pass successfully.
+* Applicable integration, interface, or contract tests have been completed and pass successfully.
+* Integration behavior conforms to the defined interface contracts where applicable.
+* The feature does not introduce known errors that prevent related existing functionality from operating correctly.
+* Relevant technical or project documentation has been updated.
+* Completed code has been reviewed by the team as appropriate and integrated into the project's shared codebase.
+A feature that has only been coded but has not satisfied its applicable testing, integration, and documentation requirements will therefore not be considered done. This ensures that completion represents a usable and verified increment of the system rather than implementation alone.
+
+
+Scrum and Integration Quality
+The Scrum working arrangement will support the integration objectives of the project by incorporating integration and testing activities throughout development. External service communication, database interaction, interface contracts, and failure handling will be evaluated as the corresponding features are developed instead of being postponed until the final stages of the project.
+Using short sprints and a consistent Definition of Done will allow the team to identify integration problems earlier, review progress regularly, and maintain a shared standard for completed work throughout the development of the system.
+
+
+Principal Technical Risk and Mitigation
+The principal technical risk of the proposed system is its dependency on the availability and successful operation of the external Brevo email service. While the Laravel application and MySQL database remain under the control of the project, email notification delivery depends on an independently operated external service. As a result, the application cannot assume that the notification service will always be available or that every API request will be successfully accepted.
+
+
+Nature of the Risk
+The integration with Brevo introduces several possible failure conditions. The external service may become temporarily unavailable, network communication may fail or exceed the application's timeout period, a request may be rejected because of invalid authentication or request data, or the service may temporarily limit requests because of rate restrictions.
+These conditions primarily affect the notification component of the system. A participant may successfully complete an event registration while the corresponding confirmation notification cannot be submitted to the external service. If registration and notification were treated as a single dependent operation, a temporary failure outside the application's control could incorrectly cause an otherwise valid registration to fail or be lost.
+
+
+Potential Impact
+The primary impact of this risk is a difference between the participant's registration status and notification status. A registration may be successfully stored in the database even though its confirmation email could not be submitted successfully to the external service.
+For the participant, this may create uncertainty because the expected confirmation message may not be received. For organizers, unsuccessful notification attempts may require investigation or additional communication. External service failures that are not properly handled could also result in application errors or make it difficult to determine which notifications were successfully submitted.
+The failure of the notification service, however, should not compromise the integrity of registration records that have already been successfully stored.
+
+
+Risk Mitigation
+The primary mitigation will be to separate registration processing from notification processing. The Laravel application will first validate the participant's information and successfully store the registration in MySQL before initiating the corresponding notification operation. Once the registration has been stored, it will remain valid regardless of the outcome of the subsequent notification request.
+The application will also handle responses and communication failures from the external service in a controlled manner. Successful notification requests will be recorded as accepted by the external service, while unsuccessful attempts will be recorded or logged where appropriate. Conditions such as network timeouts, rejected requests, and rate limiting will be treated as notification-related failures rather than registration failures.
+Appropriate timeout and exception handling will be used to prevent external communication problems from causing uncontrolled application failures. Relevant error information will be retained through application logging or notification records so that unsuccessful requests can be identified and investigated without exposing sensitive technical information to participants.
+Brevo credentials will be maintained through server-side environment configuration rather than embedded directly in the application's source code. This reduces the risk of exposing authentication information through the repository or client-facing application.
+If the scope and deployment environment permit, asynchronous queue processing may later be introduced to separate notification requests further from the participant-facing registration process and provide additional support for retry handling. However, the core mitigation does not depend on this extension; the preservation of successful registrations and controlled handling of notification failures will remain part of the primary design.
+
+
+Residual Risk
+These measures reduce the effect of external service failures on the registration process but cannot eliminate the dependency on the external notification provider. If Brevo is unavailable, the application cannot independently guarantee that a confirmation email will be submitted or delivered during that period.
+The system will therefore prioritize maintaining accurate registration records and observable notification outcomes. By separating these two states, the application can continue to preserve valid registrations while identifying notification problems for appropriate handling once external communication becomes available again.
+
+
+Conclusion
+The proposed Event and Activity Registration and Notification System provides a centralized approach to managing event information, participant registrations, and registration-related communication. By bringing these processes together within a web-based application, the proposed system aims to reduce the repetitive work involved in maintaining registration records and separately communicating with participants.
+The system will use Laravel as its primary application framework, MySQL for persistent data storage, and Brevo as the external email delivery service. Through the integration between these components, participant registrations can be validated and stored before the application initiates a confirmation notification through the external service. Maintaining a clear separation between registration and notification processing ensures that a failure involving the external email service does not invalidate registration information that has already been successfully recorded.
+The project also emphasizes the reliability and testability of the integration rather than focusing only on the implementation of individual system features. Defined coding standards, interface contracts, and testing procedures will establish consistent expectations for communication between components. Unit, integration, interface, contract, and failure-path testing will be used to verify both normal system behavior and the application's response to external service failures. The Scrum-based working arrangement and Definition of Done will further support the development process by ensuring that implementation, testing, integration, and documentation are considered throughout the project.
+Overall, the proposed system demonstrates how separate application, database, and external notification services can be integrated through clearly defined responsibilities and interfaces. Through this approach, the project aims to provide a more organized registration and communication process while applying practical principles of systems integration, interface design, failure handling, testing, and collaborative software development.
